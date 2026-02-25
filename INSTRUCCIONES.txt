@@ -1,0 +1,102 @@
+===========================================
+   BOT DE TELEGRAM - DESCARGA DE AUDIO
+===========================================
+
+📋 INFORMACIÓN DEL BOT:
+------------------------
+Nombre: @descargador_audio_bot
+Token: 8627674697:AAEFL4ebbdZYhT2u3h1KI0D0bvK9n7MbcT4
+Tu ID autorizado: 7394345045
+
+===========================================
+   CÓMO USAR EL BOT
+===========================================
+
+1️⃣ EN TELEGRAM:
+   • Abre Telegram y busca @descargador_audio_bot
+   • Envía /start para verificar que funciona
+   • Envía cualquier enlace de YouTube (video individual)
+   • Espera unos segundos y recibirás el MP3
+
+2️⃣ EJEMPLOS DE ENLACES VÁLIDOS:
+   ✅ https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   ✅ https://youtu.be/dQw4w9WgXcQ
+   ✅ https://www.youtube.com/shorts/abc123
+
+3️⃣ ENLACES NO VÁLIDOS:
+   ❌ Listas de reproducción (playlists)
+   ❌ Canales completos
+   ❌ Videos de otras plataformas no soportadas
+
+===========================================
+   CÓMO EJECUTAR EL BOT (IMPORTANTE)
+===========================================
+
+📌 REQUISITOS:
+   • Python instalado
+   • Librerías: python-telegram-bot, yt-dlp, python-dotenv
+     (Si no están: pip install python-telegram-bot yt-dlp python-dotenv)
+
+🚀 PARA INICIAR EL BOT:
+
+   OPCIÓN A - Con el archivo .bat (recomendado):
+      1. Abre la carpeta "D:\10 MIs_proyectos\TELEGRAM BOTS\youtube a audio_bot"
+      2. Haz doble clic en "iniciar_bot.bat"
+      3. Se abrirá una ventana negra con el bot funcionando
+      4. ¡NO CIERRES esta ventana mientras quieras que el bot funcione!
+
+   OPCIÓN B - Manualmente con CMD:
+      1. Abre CMD
+      2. Escribe: D:
+      3. Escribe: cd "D:\10 MIs_proyectos\TELEGRAM BOTS\youtube a audio_bot"
+      4. Escribe: python bot.py
+
+⏸️ PARA DETENER EL BOT:
+   • En la ventana negra, presiona Ctrl + C
+   • O simplemente cierra la ventana
+
+===========================================
+   ESTRUCTURA DE ARCHIVOS
+===========================================
+
+D:\10 MIs_proyectos\TELEGRAM BOTS\youtube a audio_bot/
+│
+├── bot.py                 → El código del bot
+├── .env                   → Token y tu ID secreto
+├── iniciar_bot.bat        → Acceso directo para ejecutar
+├── INSTRUCCIONES.txt      → Este archivo
+│
+└── downloads/             → Carpeta temporal (se crea sola)
+    └── (aquí van los audios temporales)
+
+===========================================
+   SOLUCIÓN DE PROBLEMAS
+===========================================
+
+❌ "python no se reconoce como comando"
+   → Python no está instalado o no está en el PATH
+
+❌ "ModuleNotFoundError"
+   → Faltan librerías. Ejecutar: pip install python-telegram-bot yt-dlp python-dotenv
+
+❌ "No tienes permiso para usar este bot"
+   → El ID en .env no coincide con tu ID de Telegram
+   → Verificar ALLOWED_USER_ID=7394345045
+
+❌ El bot no responde
+   → ¿Está la ventana del bot abierta?
+   → ¿El token es correcto?
+
+===========================================
+   NOTAS DE SEGURIDAD
+===========================================
+
+🔐 IMPORTANTE:
+   • El archivo .env contiene tu token secreto
+   • NO compartas este archivo con nadie
+   • El bot solo acepta comandos de TU usuario (ID: 7394345045)
+   • Los archivos se eliminan automáticamente después de enviarse
+
+===========================================
+   ¡DISFRUTA TU BOT!
+===========================================
