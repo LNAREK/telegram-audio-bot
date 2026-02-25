@@ -1,21 +1,66 @@
 import os
 import asyncio
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import yt_dlp
 
-# Cargar configuración
-load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ALLOWED_USER_ID = int(os.getenv("ALLOWED_USER_ID", "0"))
+# ============================================
+# CONFIGURACIÓN MEJORADA CON DEPURACIÓN
+# ============================================
 
-# Carpeta donde se guardarán los audios
+# Cargar variables de entorno (para local)
+load_dotenv()
+
+# Obtener token de MULTIPLES fuentes (para asegurar)
+BOT_TOKEN = None
+
+# Fuente 1: Variable de entorno directa
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+# Fuente 2: Desde archivo .env (si existe)
+if not BOT_TOKEN:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        BOT_TOKEN = os.getenv("BOT_TOKEN")
+    except:
+        pass
+
+# Fuente 3: Variable hardcodeada SOLO PARA DEPURACIÓN (comentar después)
+# BOT_TOKEN = "8627674697:AAEFL4ebbdZYhT2u3h1KI0D0bvK9n7MbcT4"
+
+# VERIFICAR TOKEN
+print("=" * 50)
+print("🔍 DEBUG - Verificando configuración:")
+print(f"📌 BOT_TOKEN encontrado: {'✅ SI' if BOT_TOKEN else '❌ NO'}")
+if BOT_TOKEN:
+    print(f"📌 BOT_TOKEN (primeros 10 chars): {BOT_TOKEN[:10]}...")
+print(f"📌 ALLOWED_USER_ID: {os.environ.get('ALLOWED_USER_ID', 'NO CONFIGURADO')}")
+print("=" * 50)
+
+if not BOT_TOKEN:
+    print("❌ ERROR CRÍTICO: No se pudo encontrar BOT_TOKEN")
+    print("📌 Variables de entorno disponibles:")
+    for key in os.environ.keys():
+        print(f"   - {key}")
+    sys.exit(1)
+
+# Obtener ALLOWED_USER_ID
+ALLOWED_USER_ID = os.environ.get("ALLOWED_USER_ID")
+if ALLOWED_USER_ID:
+    ALLOWED_USER_ID = int(ALLOWED_USER_ID)
+else:
+    ALLOWED_USER_ID = 0
+    print("⚠️  ALLOWED_USER_ID no configurado, modo abierto (cualquiera puede usar el bot)")
+
+# Carpeta de descargas
 DOWNLOAD_FOLDER = Path("downloads")
 DOWNLOAD_FOLDER.mkdir(exist_ok=True)
 
-# Opciones de descarga para yt-dlp (solo audio, mejor calidad)
+# Opciones de yt-dlp
 YDL_OPTS = {
     'format': 'bestaudio/best',
     'postprocessors': [{
@@ -28,7 +73,6 @@ YDL_OPTS = {
     'no_warnings': True,
 }
 
-# Función para verificar si el usuario está autorizado
 def is_authorized(user_id: int) -> bool:
     if ALLOWED_USER_ID == 0:
         return True
@@ -36,43 +80,33 @@ def is_authorized(user_id: int) -> bool:
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    print(f"📨 /start desde usuario {user_id}")
+    
     if not is_authorized(user_id):
         await update.message.reply_text("⛔ No tienes permiso para usar este bot.")
         return
     
-    if ALLOWED_USER_ID == 0:
-        await update.message.reply_text(
-            f"🔧 **MODO CONFIGURACIÓN**\n\n"
-            f"Tu ID de usuario es: `{user_id}`\n\n"
-            f"⚠️ **IMPORTANTE:** Copia este número y pégalo en el archivo `.env` "
-            f"como `ALLOWED_USER_ID={user_id}`. Luego reinicia el bot.\n\n"
-            f"Después de configurarlo, solo tú podrás usar este bot."
-        )
-    else:
-        await update.message.reply_text(
-            "🎵 **Bot Descargador de Audio**\n\n"
-            "Envíame un enlace de YouTube y lo convertiré a MP3 para ti.\n\n"
-            "✅ **Solo videos individuales, NO listas de reproducción.**"
-        )
+    await update.message.reply_text(
+        "🎵 **Bot Descargador de Audio**\n\n"
+        "Envíame un enlace de YouTube y lo convertiré a MP3.\n\n"
+        "✅ Solo videos individuales, NO listas."
+    )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    
-    if not is_authorized(user_id):
-        await update.message.reply_text("⛔ No tienes permiso para usar este bot.")
-        return
-    
     url = update.message.text
     
-    # Detectar listas de reproducción
-    if "list=" in url or "playlist" in url.lower():
-        await update.message.reply_text(
-            "❌ **Error: No se permiten listas de reproducción**\n\n"
-            "Envía el enlace de un SOLO video."
-        )
+    print(f"📨 Mensaje de {user_id}: {url[:50]}...")
+    
+    if not is_authorized(user_id):
+        await update.message.reply_text("⛔ No tienes permiso.")
         return
     
-    progress_msg = await update.message.reply_text("⏳ Descargando y convirtiendo a MP3...")
+    if "list=" in url or "playlist" in url.lower():
+        await update.message.reply_text("❌ No se permiten listas de reproducción.")
+        return
+    
+    progress_msg = await update.message.reply_text("⏳ Descargando y convirtiendo...")
     
     try:
         loop = asyncio.get_event_loop()
@@ -80,7 +114,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True))
             
             if 'entries' in info:
-                await progress_msg.edit_text("❌ No se permiten listas de reproducción.")
+                await progress_msg.edit_text("❌ Es una playlist. No permitido.")
                 return
             
             filename = ydl.prepare_filename(info)
@@ -94,11 +128,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         performer=info.get('uploader', 'Desconocido'),
                         duration=info.get('duration', 0)
                     )
-                
                 mp3_filename.unlink()
                 await progress_msg.delete()
             else:
-                await progress_msg.edit_text("❌ Error: No se encontró el archivo convertido.")
+                await progress_msg.edit_text("❌ Error: No se encontró el archivo.")
                 
     except Exception as e:
         await progress_msg.edit_text(f"❌ Error: {str(e)[:100]}")
@@ -106,30 +139,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_authorized(user_id):
-        await update.message.reply_text("⛔ No tienes permiso para usar este bot.")
+        await update.message.reply_text("⛔ No tienes permiso.")
         return
     
-    help_text = (
-        "🎵 **Bot Descargador de Audio**\n\n"
-        "📌 **Cómo usar:**\n"
-        "1. Envíame un enlace de YouTube\n"
-        "2. Espera mientras proceso\n"
-        "3. Recibirás el MP3\n\n"
-        "⚠️ **Solo videos individuales**\n\n"
-        "📌 **Comandos:**\n"
-        "/start - Iniciar\n"
-        "/help - Ayuda"
+    await update.message.reply_text(
+        "🎵 **Bot Descargador**\n\n"
+        "Envía un enlace de YouTube y recibe el MP3."
     )
-    await update.message.reply_text(help_text)
 
 def main():
+    print("🚀 Iniciando bot...")
+    print(f"📌 Token configurado: {'✅' if BOT_TOKEN else '❌'}")
+    
     app = Application.builder().token(BOT_TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("🤖 Bot iniciado. Presiona Ctrl+C para detener.")
+    print("🤖 Bot iniciado correctamente. Escuchando mensajes...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
