@@ -29,8 +29,7 @@ if not BOT_TOKEN:
     except:
         pass
 
-# Fuente 3: Variable hardcodeada SOLO PARA DEPURACIÓN (comentar después)
-# BOT_TOKEN = "8627674697:AAEFL4ebbdZYhT2u3h1KI0D0bvK9n7MbcT4"
+# BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # VERIFICAR TOKEN
 print("=" * 50)
